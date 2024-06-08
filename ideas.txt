@@ -1,0 +1,44 @@
+Another simple expression language inspired by Nix.
+
+note: 'integers' refer to data strings that are of the following sequence: `0` (0), `1` (1), `01` (2), `11` (3) etc.
+
+data types:
+
+null - signifies the lack of a value
+	()
+data - a string of bits of arbitrary length, including fractions of a byte
+	thisIsAString (this is referred to as a "token" but is treated exactly like a string)
+	this_is_a_string
+	"this is a string"
+	'FFFF' (hexadecimal)
+	`111000111000` (binary, and yes, it does not have to align to bytes)
+	325 (numbers (detected at the first character of a token) are converted to integers; this means tokens can't start with a number unless the first number is escaped)
+set - maps specific inputs (as type data) to outputs (as any type)
+	{ asdf = jkl; alice = "bob"; "this will be stored at position 0"; "this will be stored at position 1" } ('=' and ';' are not operators; they are just part of the set definition syntax)
+function - an expression in terms of a variable
+	a: a (the colon is not an operator; it is a piece of syntax that causes the rest of the current expression to be turned into a function written in terms of the specified variable)
+
+combinations:
+
+null any: returns the type of the argument: `0` for null, `1` for data, `01` for set, `11` for function
+
+data null:	returns the length of the string
+data data:	string concatenation
+data set:	returns a data string containing the bits of the data string between and including the indexes stored at `0` and `1`, starting at integer 0, excluding out-of-bounds characters
+data func:	calls the function with each bit in the string and combines the returned values in order
+
+set null:	returns a set containing the keys of the set indexed by number, starting at integer 0
+set data:	returns the value associated with the key equal to the argument or null if no matching key can be found
+set set:	combines the two sets, with the rightmost set taking precedence
+set func:	calls the function with each value in the set that is indexed by an integer (starting at 0 and stopping when null is returned) and combines the returned results in order
+
+func any:	subs in the argument for the expression variable and returns the result
+
+special cases:
+- tokens are separated by curly braces, parentheses, quotes, backticks, '=', ';', ':', '$', ' ', '\n', '\t', or '\r' (for MS (Windows/DOS/etc.) compatibility)
+- a hash ('#') signifies the start or end of a comment, except within backticks or quotes of any kind
+	# this is a comment #
+	#this is another comment#
+	"#this is a string, not a comment#"
+- the escape character is '\', which can stop comments from opening and closing, characters from being treated as anything but part of an unquoted string (including digits), and itself (two backslashes resolve to one)
+- '$' represents the scope set, which stores the current scope as a set; this is the only way to access scope, since tokens are interpreted as strings
