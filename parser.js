@@ -21,7 +21,6 @@ function nixinter(exp) {
 
 	const Null = mkobj(9);
 
-
 	function tokenise(exp, start = 0, end = exp.length) {
 		const tokens = [];
 
@@ -371,7 +370,20 @@ function nixinter(exp) {
 		};
 	}
 
-	const addToSet = (a, b) => ({ type: 7, val: { ...a.val, ...b.val } });
+	function addToSet(a, b) {
+		const res = mkobj(7, {});
+
+		for (set of [a, b]) {
+			for (const l in set.val) {
+				for (const n in set.val[l]) {
+					res.val[l] = res.val[l] || {};
+					res.val[l][n] = set.val[l][n];
+				}
+			}
+		}
+
+		return res;
+	}
 
 	const getSet = (s, k) => s.val[k.len]?.[k.val.toString("binary")] || Null;
 
@@ -494,7 +506,7 @@ function nixinter(exp) {
 		}
 	}
 
-	function nixeval(e, scope = mkobj(7, {})) {
+	function nixevalUnsafe(e, scope = mkobj(7, {})) {
 		// as of now, types are as follows:
 		// 0: string (adjacent ordinary characters or specifically constructed strings)
 		// 2: special tokens (only the scope set character by now)
@@ -551,6 +563,10 @@ function nixinter(exp) {
 		}
 
 		return e;
+	}
+
+	function nixeval(e, scope) {
+		return nixevalUnsafe(e, scope) || Null;
 	}
 
 	console.log("---BEGIN EVALUATION---");
