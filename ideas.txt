@@ -1,4 +1,4 @@
-Another simple expression language inspired by Nix.
+Nick's Language: a simple expression language inspired by Nix.
 
 note: 'integers' refer to data strings that are of the following sequence: `0` (0), `1` (1), `01` (2), `11` (3) etc.
 
