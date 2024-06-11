@@ -16,6 +16,79 @@ function tee(...x) {
 	return x[x.length - 1];
 }
 
+function pad(level) {
+	let res = "";
+
+	for (let i = 0; i < level; i++) {
+		res += "\t";
+	}
+
+	return res;
+}
+
+function dataToInt(x) {
+	let counter = 0;
+
+	for (let i = 0; i < x.len; i++) {
+		counter += ((x.val[Math.floor(i / 8)] & (128 >> (i % 8))) !== 0) * 2**i;
+	}
+
+	return counter;
+}
+
+function prettyPrint(e, indent = 0) {
+	let res = "[" + {
+		0: "dat",
+		7: "set",
+		8: "fun",
+		9: "nul"
+	}[e.type];
+
+	function craft(normal, typeRelated) {
+		if (typeRelated) {
+			for (const a of typeRelated) {
+				res += " " + a;
+			}
+		}
+
+		res += ':';
+
+		for (const a of normal) {
+			res += " " + a;
+		}
+	}
+
+	switch (e.type) {
+		case 0:
+			craft([JSON.stringify(e.val.toString()), e.val.toString("hex"), e.len < 53 ? dataToInt(e) : NaN], [e.len]);
+			break;
+		case 7:
+			{
+				//intToData(i), { type: 0, val: Buffer.from(k, "binary"), len: Number(l) }
+				const items = [];
+
+				for (const l in e.val) {
+					for (const k in e.val[l]) {
+						items.push("\n" + pad(indent + 1) + prettyPrint({
+							type: 0,
+							val: Buffer.from(k, "binary"),
+							len: Number(l)
+						}, indent + 1) + " = " + prettyPrint(e.val[l][k], indent + 1) + ";");
+					}
+				}
+
+
+				if (items.length) {
+					craft(items);
+					return res + '\n' + pad(indent) + ']';
+				}
+			};
+			break;
+	}
+
+	return res + ']';
+}
+
 function nixinter(exp) {
 	function reverseByte(b) {
 		b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
@@ -118,11 +191,15 @@ function nixinter(exp) {
 
 			if ((ltype !== -1 && (ctype === 2 || ctype !== ltype))) {
 				if (token.length > 0) {
+					if (ltype === 10) {
+						tokens.push(intToData(Number(token)));
+					} else {
 					tokens.push({
-						type: ltype === 10 ? 0 : ltype,
-						val: ltype === 0 ? Buffer.from(token, "utf8") : ltype === 10 ? intToData(Number(token)) : token,
+						type: ltype,
+						val: ltype === 0 ? Buffer.from(token, "utf8") : token,
 						...(ltype === 0 && { len: token.length * 8 })
 					});
+					}
 
 					token = "";
 				}
@@ -224,16 +301,6 @@ function nixinter(exp) {
 			val: b,
 			len: len
 		};
-	}
-
-	function dataToInt(x) {
-		let counter = 0;
-
-		for (let i = 0; i < x.len; i++) {
-			counter += ((x.val[Math.floor(i / 8)] & (128 >> (i % 8))) !== 0) * 2**i;
-		}
-
-		return counter;
 	}
 
 	function grpset(tokens, start = 0) {
@@ -473,7 +540,7 @@ function nixinter(exp) {
 							let i = 0;
 							for (const l in a.val) {
 								for (const k in a.val[l]) {
-									setSet(nset, intToData(i), mkobj(0, Buffer.from(k, "binary")));
+									setSet(nset, intToData(i), { type: 0, val: Buffer.from(k, "binary"), len: Number(l) });
 									i++;
 								}
 							}
@@ -520,6 +587,12 @@ function nixinter(exp) {
 		// 4: set constructor
 		// 5: function constructor
 		// 6: combiner
+		// 7: set
+		// 8: function
+		// 9: null
+
+		// data types that can be returned as results:
+		// 0: string
 		// 7: set
 		// 8: function
 		// 9: null
@@ -590,11 +663,16 @@ function nixinter(exp) {
 	console.dir(grouped, { depth: null });
 	console.log();
 
-	console.log("---RETURNING RESULT---");
+	console.log("---FINISHED; RETURNING RESULT---");
 	return nixeval(grouped);
 }
 
 const exp = fs.readFileSync(process.argv[2]).toString()
 //const exp = "";
 
-console.dir(nixinter(exp), { depth: null });
+const res = nixinter(exp);
+
+// print both the ugly and pretty versions, separated by a newline
+console.dir(res, { depth: null });
+console.log();
+console.log(prettyPrint(res));
