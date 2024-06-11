@@ -1,6 +1,0 @@
-(def:
-
-$def abcd val:
-$val
-
-) (x: f: $f($x))
