@@ -37,58 +37,41 @@ function dataToInt(x) {
 }
 
 function prettyPrint(e, indent = 0) {
-	let res = "[" + {
-		0: "dat",
-		7: "set",
-		8: "fun",
-		9: "nul"
-	}[e.type];
-
-	function craft(normal, typeRelated) {
-		if (typeRelated) {
-			for (const a of typeRelated) {
-				res += " " + a;
-			}
-		}
-
-		res += ':';
-
-		for (const a of normal) {
-			res += " " + a;
-		}
-	}
+	let res = "";
 
 	switch (e.type) {
 		case 0:
-			// the length of the data piece is added as part of the type information
-			// the actual data itself is represented in three ways: JSON string, hex string, integer (if it is small enough)
-			craft([JSON.stringify(e.val.toString()), e.val.toString("hex"), e.len <= 32 ? dataToInt(e) : NaN], [e.len]);
+			// data is represented in three ways: JSON string, hex string, number (if it is small enough, else "big")
+			res += `[data ${e.len}: ${JSON.stringify(e.val.toString())} ${e.val.toString("hex")} ${e.len <= 32 ? dataToInt(e) : "big"}]`;
 			break;
 		case 7:
-			{
-				//intToData(i), { type: 0, val: Buffer.from(k, "binary"), len: Number(l) }
-				const items = [];
+			if (Object.keys(e.val).length === 0) {
+				res += "{}";
+				break;
+			}
 
-				for (const l in e.val) {
-					for (const k in e.val[l]) {
-						items.push("\n" + pad(indent + 1) + prettyPrint({
-							type: 0,
-							val: Buffer.from(k, "binary"),
-							len: Number(l)
-						}, indent + 1) + " = " + prettyPrint(e.val[l][k], indent + 1) + ";");
-					}
+			res += '{';
+
+			for (const l in e.val) {
+				for (const k in e.val[l]) {
+					const key = prettyPrint({ type: 0, val: Buffer.from(k, "binary"), len: Number(l) });
+					const value = prettyPrint(e.val[l][k], indent + 1);
+
+					res += `\n${pad(indent + 1)}${key} = ${value};`;
 				}
+			}
 
-
-				if (items.length) {
-					craft(items);
-					return res + '\n' + pad(indent) + ']';
-				}
-			};
+			res += `\n${pad(indent)}}`;
+			break;
+		case 8:
+			res += "[function]";
+			break;
+		case 9:
+			res += "()";
 			break;
 	}
 
-	return res + ']';
+	return res;
 }
 
 function nixinter(exp) {
