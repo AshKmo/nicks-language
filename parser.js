@@ -649,30 +649,34 @@ function nixinter(exp) {
 		return nixevalUnsafe(e, scope) || Null;
 	}
 
-	console.log("---BEGIN EVALUATION---");
+	//console.log("---BEGIN EVALUATION---");
 
 	const tokens = tokenise(exp);
 
-	console.log("TOKENS");
-	console.dir(tokens, { depth: null });
-	console.log();
+	//console.log("TOKENS");
+	//console.dir(tokens, { depth: null });
+	//console.log();
 
 	const grouped = group(tokens).branch;
 
-	console.log("GROUPED");
-	console.dir(grouped, { depth: null });
-	console.log();
+	//console.log("GROUPED");
+	//console.dir(grouped, { depth: null });
+	//console.log();
 
-	console.log("---FINISHED; RETURNING RESULT---");
+	//console.log("---FINISHED; RETURNING RESULT---");
+
 	return nixeval(grouped);
 }
 
-const exp = fs.readFileSync(process.argv[2]).toString()
-//const exp = "";
+if (process.argv.length < 3) {
+	console.error("No expression file specified!");
+} else {
+	const exp = fs.readFileSync(process.argv[2]).toString();
+	
+	const res = nixinter(exp);
+	
+	//console.dir(res, { depth: null });
+	//console.log();
 
-const res = nixinter(exp);
-
-// print both the ugly and pretty versions, separated by a newline
-console.dir(res, { depth: null });
-console.log();
-console.log(prettyPrint(res));
+	console.log(prettyPrint(res));
+}
