@@ -60,7 +60,9 @@ function prettyPrint(e, indent = 0) {
 
 	switch (e.type) {
 		case 0:
-			craft([JSON.stringify(e.val.toString()), e.val.toString("hex"), e.len < 53 ? dataToInt(e) : NaN], [e.len]);
+			// the length of the data piece is added as part of the type information
+			// the actual data itself is represented in three ways: JSON string, hex string, integer (if it is small enough)
+			craft([JSON.stringify(e.val.toString()), e.val.toString("hex"), e.len <= 32 ? dataToInt(e) : NaN], [e.len]);
 			break;
 		case 7:
 			{
