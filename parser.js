@@ -1,5 +1,12 @@
 #!/bin/env node
 
+/*
+ * Nick's Language sample parser
+ * Written by AshKmo, 2024
+ *
+ * This script accepts a single file path to a text file containing the expression to be evaluated and evaluates it as per the Nick's Language specification.
+ */
+
 const fs = require('fs');
 
 // debugging function
@@ -587,7 +594,7 @@ function nixinter(exp) {
 	return nixeval(grouped);
 }
 
-const exp = fs.readFileSync("exp.txt").toString()
+const exp = fs.readFileSync(process.argv[2]).toString()
 //const exp = "";
 
 console.dir(nixinter(exp), { depth: null });
